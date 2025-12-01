@@ -8,6 +8,7 @@ import sys
 import os
 import json
 import logging
+import socket
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 import sqlite3
@@ -16,6 +17,19 @@ from sqlite_database_manager import SQLiteBossShoppDatabase
 # Configurar logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+
+def get_local_ip():
+    """Get the local IP address of the machine"""
+    try:
+        # Connect to a remote server to determine local IP
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
 
 # Adicionar o diretório atual ao path para importar módulos
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -174,20 +188,22 @@ class APIRequestHandler(BaseHTTPRequestHandler):
 
 def main():
     """Função principal para iniciar o servidor"""
-    server_address = ('localhost', 8001)
+    server_address = ('0.0.0.0', 8001)
     httpd = HTTPServer(server_address, APIRequestHandler)
+    
+    local_ip = get_local_ip()
     
     logger.info("==================================================")
     logger.info("BOSS SHOPP API SERVER")
     logger.info("==================================================")
-    logger.info(f"Servidor iniciado em http://localhost:8001")
+    logger.info(f"Servidor iniciado em http://0.0.0.0:8001")
     logger.info("Endpoints disponíveis:")
-    logger.info("  - http://localhost:8001/api/stats")
-    logger.info("  - http://localhost:8001/api/users")
-    logger.info("  - http://localhost:8001/api/products")
-    logger.info("  - http://localhost:8001/api/categories")
-    logger.info("  - http://localhost:8001/api/orders")
-    logger.info("  - http://localhost:8001/api/login")
+    logger.info(f"  - http://{local_ip}:8001/api/stats")
+    logger.info(f"  - http://{local_ip}:8001/api/users")
+    logger.info(f"  - http://{local_ip}:8001/api/products")
+    logger.info(f"  - http://{local_ip}:8001/api/categories")
+    logger.info(f"  - http://{local_ip}:8001/api/orders")
+    logger.info(f"  - http://{local_ip}:8001/api/login")
     logger.info("Pressione Ctrl+C para parar o servidor")
     logger.info("==================================================")
     

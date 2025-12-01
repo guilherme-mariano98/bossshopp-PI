@@ -1,5 +1,5 @@
 const express = require('express');
-const mysql = require('mysql2');
+const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -28,123 +28,106 @@ function getLocalIP() {
   return 'localhost';
 }
 
-// MySQL database configuration
-const dbConfig = {
-  host: 'localhost',
-  port: 3307, // MySQL is running on port 3307
-  user: 'root',
-  password: 'root',
-  database: 'boss_shopp',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-};
-
-// Create MySQL connection pool
-const pool = mysql.createPool(dbConfig);
-
-// Get a connection from the pool
-const db = pool.promise();
-
-// Test database connection
-db.getConnection()
-  .then(() => {
-    console.log('Connected to MySQL database');
+// Create SQLite database connection
+const db = new sqlite3.Database('./database.db', (err) => {
+  if (err) {
+    console.error('Error opening database:', err.message);
+  } else {
+    console.log('Connected to SQLite database');
     initializeDatabase();
-  })
-  .catch(err => {
-    console.error('Error connecting to MySQL database:', err.message);
-    console.error('Database configuration:', JSON.stringify(dbConfig, null, 2));
-    console.log('Please make sure MySQL is running and the database configuration is correct.');
-    console.log('');
-    console.log('Troubleshooting tips:');
-    console.log('1. Check if MySQL service is running (Get-Service -Name "MySQL80")');
-    console.log('2. Verify MySQL is listening on port 3307 (netstat -an | findstr :3307)');
-    console.log('3. Check MySQL root user credentials');
-    console.log('4. Refer to MANUAL_MYSQL_SETUP.md for manual setup instructions');
-  });
+  }
+});
 
 // Initialize database tables
-async function initializeDatabase() {
+function initializeDatabase() {
   try {
     // Create users table with enhanced customer information
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        phone VARCHAR(20),
-        address TEXT,
-        city VARCHAR(100),
-        state VARCHAR(100),
-        zip_code VARCHAR(20),
-        country VARCHAR(100) DEFAULT 'Brasil',
-        date_of_birth DATE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      )
-    `);
-    console.log('Users table created/verified');
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password TEXT NOT NULL,
+      phone TEXT,
+      address TEXT,
+      city TEXT,
+      state TEXT,
+      zip_code TEXT,
+      country TEXT DEFAULT 'Brasil',
+      date_of_birth TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`, (err) => {
+      if (err) {
+        console.error('Error creating users table:', err.message);
+      } else {
+        console.log('Users table created/verified');
+      }
+    });
 
     // Create products table
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS products (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        description TEXT,
-        price DECIMAL(10, 2) NOT NULL,
-        category VARCHAR(100) NOT NULL,
-        image_url VARCHAR(500),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    console.log('Products table created/verified');
+    db.run(`CREATE TABLE IF NOT EXISTS products (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      price REAL NOT NULL,
+      category TEXT NOT NULL,
+      image_url TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`, (err) => {
+      if (err) {
+        console.error('Error creating products table:', err.message);
+      } else {
+        console.log('Products table created/verified');
+        // Check if products table is empty and insert sample products
+        db.get("SELECT COUNT(*) as count FROM products", (err, row) => {
+          if (!err && row && row.count === 0) {
+            insertSampleProducts();
+          }
+        });
+      }
+    });
 
     // Create orders table
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS orders (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        user_id INT,
-        total_amount DECIMAL(10, 2) NOT NULL,
-        status VARCHAR(50) DEFAULT 'pending',
-        shipping_address TEXT,
-        payment_method VARCHAR(100),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id)
-      )
-    `);
-    console.log('Orders table created/verified');
+    db.run(`CREATE TABLE IF NOT EXISTS orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      total_amount REAL NOT NULL,
+      status TEXT DEFAULT 'pending',
+      shipping_address TEXT,
+      payment_method TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )`, (err) => {
+      if (err) {
+        console.error('Error creating orders table:', err.message);
+      } else {
+        console.log('Orders table created/verified');
+      }
+    });
 
     // Create order_items table
-    await db.execute(`
-      CREATE TABLE IF NOT EXISTS order_items (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        order_id INT,
-        product_id INT,
-        quantity INT NOT NULL,
-        price DECIMAL(10, 2) NOT NULL,
-        FOREIGN KEY (order_id) REFERENCES orders(id),
-        FOREIGN KEY (product_id) REFERENCES products(id)
-      )
-    `);
-    console.log('Order_items table created/verified');
-
-    // Check if products table is empty and insert sample products
-    const [rows] = await db.execute("SELECT COUNT(*) as count FROM products");
-    if (rows[0].count === 0) {
-      insertSampleProducts();
-    }
+    db.run(`CREATE TABLE IF NOT EXISTS order_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER,
+      product_id INTEGER,
+      quantity INTEGER NOT NULL,
+      price REAL NOT NULL,
+      FOREIGN KEY (order_id) REFERENCES orders(id),
+      FOREIGN KEY (product_id) REFERENCES products(id)
+    )`, (err) => {
+      if (err) {
+        console.error('Error creating order_items table:', err.message);
+      } else {
+        console.log('Order_items table created/verified');
+      }
+    });
   } catch (err) {
     console.error('Error initializing database:', err.message);
-    console.error('Stack trace:', err.stack);
-    console.log('');
-    console.log('Please check your MySQL setup and refer to MANUAL_MYSQL_SETUP.md for manual setup instructions');
   }
 }
 
 // Insert sample products
-async function insertSampleProducts() {
+function insertSampleProducts() {
   const products = [
     // Moda category
     { name: 'Camiseta Básica', description: 'Camiseta de algodão 100%', price: 39.90, category: 'moda' },
@@ -183,18 +166,18 @@ async function insertSampleProducts() {
     { name: 'Carrinho de Controle Remoto', description: 'Carrinho com controle remoto', price: 89.90, category: 'infantil' }
   ];
 
-  try {
-    for (const product of products) {
-      await db.execute(
-        "INSERT INTO products (name, description, price, category) VALUES (?, ?, ?, ?)",
-        [product.name, product.description, product.price, product.category]
-      );
-    }
-    console.log('Sample products inserted');
-  } catch (err) {
-    console.error('Error inserting sample products:', err.message);
-    console.error('Stack trace:', err.stack);
-  }
+  const stmt = db.prepare("INSERT INTO products (name, description, price, category) VALUES (?, ?, ?, ?)");
+  
+  products.forEach(product => {
+    stmt.run(product.name, product.description, product.price, product.category, function(err) {
+      if (err) {
+        console.error('Error inserting product:', err.message);
+      }
+    });
+  });
+  
+  stmt.finalize();
+  console.log('Sample products inserted');
 }
 
 // Middleware to authenticate token
@@ -227,28 +210,40 @@ app.post('/api/register', async (req, res) => {
     }
     
     // Check if user already exists
-    const [rows] = await db.execute("SELECT * FROM users WHERE email = ?", [email]);
-    
-    if (rows.length > 0) {
-      return res.status(400).json({ error: 'User already exists' });
-    }
-    
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // Insert new user
-    const [result] = await db.execute(
-      "INSERT INTO users (name, email, password, phone, address, city, state, zip_code, country, date_of_birth) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", 
-      [name, email, hashedPassword, phone, address, city, state, zipCode, country, dateOfBirth]
-    );
-    
-    // Generate token
-    const token = jwt.sign({ id: result.insertId, name, email }, SECRET_KEY);
-    
-    res.status(201).json({
-      message: 'User created successfully',
-      token,
-      user: { id: result.insertId, name, email }
+    db.get("SELECT * FROM users WHERE email = ?", [email], (err, row) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (row) {
+        return res.status(400).json({ error: 'User already exists' });
+      }
+      
+      // Hash password
+      bcrypt.hash(password, 10, (err, hashedPassword) => {
+        if (err) {
+          return res.status(500).json({ error: 'Error hashing password' });
+        }
+        
+        // Insert new user
+        const stmt = db.prepare("INSERT INTO users (name, email, password, phone, address, city, state, zip_code, country, date_of_birth) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        stmt.run([name, email, hashedPassword, phone, address, city, state, zipCode, country, dateOfBirth], function(err) {
+          if (err) {
+            return res.status(500).json({ error: 'Error creating user' });
+          }
+          
+          // Generate token
+          const token = jwt.sign({ id: this.lastID, name, email }, SECRET_KEY);
+          
+          res.status(201).json({
+            message: 'User created successfully',
+            token,
+            user: { id: this.lastID, name, email }
+          });
+          
+          stmt.finalize();
+        });
+      });
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -257,7 +252,7 @@ app.post('/api/register', async (req, res) => {
 });
 
 // User login
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', (req, res) => {
   try {
     const { email, password } = req.body;
     
@@ -266,27 +261,30 @@ app.post('/api/login', async (req, res) => {
     }
     
     // Find user
-    const [rows] = await db.execute("SELECT * FROM users WHERE email = ?", [email]);
-    
-    if (rows.length === 0) {
-      return res.status(400).json({ error: 'Invalid credentials' });
-    }
-    
-    const user = rows[0];
-    
-    // Check password
-    const isValidPassword = await bcrypt.compare(password, user.password);
-    if (!isValidPassword) {
-      return res.status(400).json({ error: 'Invalid credentials' });
-    }
-    
-    // Generate token
-    const token = jwt.sign({ id: user.id, name: user.name, email: user.email }, SECRET_KEY);
-    
-    res.json({
-      message: 'Login successful',
-      token,
-      user: { id: user.id, name: user.name, email: user.email }
+    db.get("SELECT * FROM users WHERE email = ?", [email], (err, user) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (!user) {
+        return res.status(400).json({ error: 'Invalid credentials' });
+      }
+      
+      // Check password
+      bcrypt.compare(password, user.password, (err, isValidPassword) => {
+        if (err || !isValidPassword) {
+          return res.status(400).json({ error: 'Invalid credentials' });
+        }
+        
+        // Generate token
+        const token = jwt.sign({ id: user.id, name: user.name, email: user.email }, SECRET_KEY);
+        
+        res.json({
+          message: 'Login successful',
+          token,
+          user: { id: user.id, name: user.name, email: user.email }
+        });
+      });
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -295,7 +293,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 // Get all products
-app.get('/api/products', async (req, res) => {
+app.get('/api/products', (req, res) => {
   try {
     const category = req.query.category;
     
@@ -307,8 +305,12 @@ app.get('/api/products', async (req, res) => {
       params = [category];
     }
     
-    const [rows] = await db.execute(query, params);
-    res.json(rows);
+    db.all(query, params, (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json(rows);
+    });
   } catch (error) {
     console.error('Error fetching products:', error);
     res.status(500).json({ error: 'Database error' });
@@ -316,17 +318,21 @@ app.get('/api/products', async (req, res) => {
 });
 
 // Get product by ID
-app.get('/api/products/:id', async (req, res) => {
+app.get('/api/products/:id', (req, res) => {
   try {
     const id = req.params.id;
     
-    const [rows] = await db.execute("SELECT * FROM products WHERE id = ?", [id]);
-    
-    if (rows.length === 0) {
-      return res.status(404).json({ error: 'Product not found' });
-    }
-    
-    res.json(rows[0]);
+    db.get("SELECT * FROM products WHERE id = ?", [id], (err, row) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (!row) {
+        return res.status(404).json({ error: 'Product not found' });
+      }
+      
+      res.json(row);
+    });
   } catch (error) {
     console.error('Error fetching product:', error);
     res.status(500).json({ error: 'Database error' });
@@ -334,130 +340,115 @@ app.get('/api/products/:id', async (req, res) => {
 });
 
 // Get user profile (protected route)
-app.get('/api/profile', authenticateToken, async (req, res) => {
-    try {
-        const [rows] = await db.execute(
-            "SELECT id, name, email, phone, address, city, state, zip_code, country, date_of_birth, created_at FROM users WHERE id = ?", 
-            [req.user.id]
-        );
-        
-        if (rows.length === 0) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        
-        res.json(rows[0]);
-    } catch (error) {
-        console.error('Error fetching user profile:', error);
-        res.status(500).json({ error: 'Database error' });
-    }
+app.get('/api/profile', authenticateToken, (req, res) => {
+  try {
+    db.get("SELECT id, name, email, phone, address, city, state, zip_code, country, date_of_birth, created_at FROM users WHERE id = ?", [req.user.id], (err, row) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (!row) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      res.json(row);
+    });
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Update user profile (protected route)
-app.put('/api/profile', authenticateToken, async (req, res) => {
-    try {
-        const { name, phone, address, city, state, zipCode, country, dateOfBirth } = req.body;
-        
-        if (!name) {
-            return res.status(400).json({ error: 'Name is required' });
-        }
-        
-        const [result] = await db.execute(
-            "UPDATE users SET name = ?, phone = ?, address = ?, city = ?, state = ?, zip_code = ?, country = ?, date_of_birth = ? WHERE id = ?", 
-            [name, phone, address, city, state, zipCode, country, dateOfBirth, req.user.id]
-        );
-        
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        
-        // Return updated user data
-        const [rows] = await db.execute(
-            "SELECT id, name, email, phone, address, city, state, zip_code, country, date_of_birth, created_at FROM users WHERE id = ?", 
-            [req.user.id]
-        );
-        
-        if (rows.length === 0) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        
-        res.json(rows[0]);
-    } catch (error) {
-        console.error('Error updating profile:', error);
-        res.status(500).json({ error: 'Database error' });
+app.put('/api/profile', authenticateToken, (req, res) => {
+  try {
+    const { name, phone, address, city, state, zipCode, country, dateOfBirth } = req.body;
+    
+    if (!name) {
+      return res.status(400).json({ error: 'Name is required' });
     }
+    
+    const stmt = db.prepare("UPDATE users SET name = ?, phone = ?, address = ?, city = ?, state = ?, zip_code = ?, country = ?, date_of_birth = ? WHERE id = ?");
+    stmt.run([name, phone, address, city, state, zipCode, country, dateOfBirth, req.user.id], function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      // Return updated user data
+      db.get("SELECT id, name, email, phone, address, city, state, zip_code, country, date_of_birth, created_at FROM users WHERE id = ?", [req.user.id], (err, row) => {
+        if (err) {
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (!row) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+        
+        res.json(row);
+      });
+      
+      stmt.finalize();
+    });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Create order (protected route)
-app.post('/api/orders', authenticateToken, async (req, res) => {
+app.post('/api/orders', authenticateToken, (req, res) => {
   const { items, totalAmount, shippingAddress, paymentMethod } = req.body;
   
   if (!items || !totalAmount || !shippingAddress || !paymentMethod) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
   
-  const connection = await db.getConnection();
-  
-  try {
-    await connection.beginTransaction();
-    
-    // Insert order
-    const [orderResult] = await connection.execute(
-      "INSERT INTO orders (user_id, total_amount, shipping_address, payment_method) VALUES (?, ?, ?, ?)",
-      [req.user.id, totalAmount, shippingAddress, paymentMethod]
-    );
-    
-    const orderId = orderResult.insertId;
-    
-    // Insert order items
-    for (const item of items) {
-      await connection.execute(
-        "INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)",
-        [orderId, item.productId, item.quantity, item.price]
-      );
+  // Insert order
+  const stmt = db.prepare("INSERT INTO orders (user_id, total_amount, shipping_address, payment_method) VALUES (?, ?, ?, ?)");
+  stmt.run([req.user.id, totalAmount, shippingAddress, paymentMethod], function(err) {
+    if (err) {
+      return res.status(500).json({ error: 'Error creating order' });
     }
     
-    await connection.commit();
+    const orderId = this.lastID;
     
-    res.status(201).json({
-      message: 'Order created successfully',
-      orderId
+    // Insert order items
+    const itemStmt = db.prepare("INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)");
+    let itemCount = 0;
+    
+    items.forEach(item => {
+      itemStmt.run([orderId, item.productId, item.quantity, item.price], function(err) {
+        if (err) {
+          console.error('Error inserting order item:', err.message);
+        }
+        itemCount++;
+        if (itemCount === items.length) {
+          res.status(201).json({
+            message: 'Order created successfully',
+            orderId
+          });
+          itemStmt.finalize();
+        }
+      });
     });
-  } catch (error) {
-    await connection.rollback();
-    console.error('Error creating order:', error);
-    res.status(500).json({ error: 'Error creating order' });
-  } finally {
-    connection.release();
-  }
+    
+    stmt.finalize();
+  });
 });
 
 // Get user orders (protected route)
-app.get('/api/orders', authenticateToken, async (req, res) => {
+app.get('/api/orders', authenticateToken, (req, res) => {
   try {
-    const [rows] = await db.execute(
-      `SELECT o.*, 
-              GROUP_CONCAT(
-                JSON_OBJECT(
-                  'productId', oi.product_id, 
-                  'quantity', oi.quantity, 
-                  'price', oi.price
-                )
-              ) as items
-       FROM orders o 
-       JOIN order_items oi ON o.id = oi.order_id 
-       WHERE o.user_id = ? 
-       GROUP BY o.id 
-       ORDER BY o.created_at DESC`,
-      [req.user.id]
-    );
-    
-    // Parse items JSON
-    const orders = rows.map(order => ({
-      ...order,
-      items: order.items ? JSON.parse(`[${order.items}]`) : []
-    }));
-    
-    res.json(orders);
+    db.all(`SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC`, [req.user.id], (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json(rows);
+    });
   } catch (error) {
     console.error('Error fetching orders:', error);
     res.status(500).json({ error: 'Database error' });
@@ -475,23 +466,26 @@ app.get('*', (req, res) => {
 });
 
 // Start server
+const localIP = getLocalIP();
 app.listen(PORT, '0.0.0.0', () => {
-  const localIP = getLocalIP();
+  console.log('========================================');
+  console.log('BOSS SHOPP - Frontend Server');
+  console.log('========================================');
   console.log(`Server is running on all network interfaces`);
   console.log(`Local access: http://localhost:${PORT}`);
   console.log(`Network access: http://${localIP}:${PORT}`);
-  console.log(`API endpoints available at http://${localIP}:${PORT}/api`);
+  console.log('========================================');
 });
 
 // Handle graceful shutdown
 process.on('SIGINT', () => {
-  db.end()
-    .then(() => {
-      console.log('Database connection closed');
-      process.exit(0);
-    })
-    .catch(err => {
+  db.close((err) => {
+    if (err) {
       console.error('Error closing database connection:', err);
       process.exit(1);
-    });
+    } else {
+      console.log('Database connection closed');
+      process.exit(0);
+    }
+  });
 });

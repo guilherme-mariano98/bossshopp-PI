@@ -1,7 +1,7 @@
 // Auth JavaScript Functions
 
-// API Base URL for Python backend
-const API_BASE_URL = 'http://localhost:8001/api';
+// API Base URL for Node.js backend (changed from Python backend)
+const API_BASE_URL = 'http://localhost:8000/api';
 
 // Switch between login and register forms
 function showLogin() {
@@ -194,39 +194,31 @@ function showToast(message, type = 'success') {
     }, 4000);
 }
 
-// Real login function that works with localStorage
+// Real login function that works with the backend API
 async function handleLogin(formData) {
     try {
-        const email = formData.get('email');
-        const password = formData.get('password');
+        // Get values from the form fields
+        const email = formData.get('email') || document.getElementById('loginEmail').value;
+        const password = formData.get('password') || document.getElementById('loginPassword').value;
         
-        // Get registered users from localStorage
-        const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+        // Send login request to backend
+        const response = await fetch(`${API_BASE_URL}/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ email, password })
+        });
         
-        // Find user by email
-        const user = users.find(u => u.email === email);
+        const data = await response.json();
         
-        if (user) {
-            // In a real app, you would verify the password hash
-            // For now, we'll just check if the user exists
-            const userData = {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                phone: user.phone,
-                address: user.address,
-                city: user.city,
-                state: user.state,
-                zipCode: user.zipCode,
-                country: user.country,
-                dateOfBirth: user.dateOfBirth
-            };
-            
-            // Store user data in localStorage
-            localStorage.setItem('user', JSON.stringify(userData));
+        if (response.ok) {
+            // Store token and user data in localStorage
+            localStorage.setItem('authToken', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
             return { success: true, message: 'Login realizado com sucesso!' };
         } else {
-            return { success: false, message: 'Email ou senha inválidos' };
+            return { success: false, message: data.error || 'Email ou senha inválidos' };
         }
     } catch (error) {
         console.error('Login error:', error);
@@ -234,42 +226,41 @@ async function handleLogin(formData) {
     }
 }
 
-// Registration function that works with localStorage
+// Registration function that works with the backend API
 async function handleRegister(formData) {
     try {
-        const email = formData.get('email');
-        
-        // Check if user already exists
-        let users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-        const existingUser = users.find(u => u.email === email);
-        
-        if (existingUser) {
-            return { success: false, message: 'Este email já está cadastrado!' };
-        }
-        
-        // Create new user
         const userData = {
-            id: Date.now(), // Simple ID generation
             name: formData.get('firstName') + ' ' + formData.get('lastName'),
-            email: email,
+            email: formData.get('email'),
+            password: formData.get('password'),
             phone: formData.get('phone') || '',
-            address: formData.get('address') || '',
-            city: formData.get('city') || '',
-            state: formData.get('state') || '',
-            zipCode: formData.get('zipCode') || '',
-            country: formData.get('country') || 'Brasil',
-            dateOfBirth: formData.get('dateOfBirth') || '',
-            createdAt: new Date().toISOString()
+            address: '',
+            city: '',
+            state: '',
+            zipCode: '',
+            country: 'Brasil',
+            dateOfBirth: ''
         };
         
-        // Store user data in localStorage
-        users.push(userData);
-        localStorage.setItem('registeredUsers', JSON.stringify(users));
+        // Send registration request to backend
+        const response = await fetch(`${API_BASE_URL}/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(userData)
+        });
         
-        // Automatically log the user in
-        localStorage.setItem('user', JSON.stringify(userData));
+        const data = await response.json();
         
-        return { success: true, message: 'Conta criada e login realizado com sucesso!' };
+        if (response.ok) {
+            // Store token and user data in localStorage
+            localStorage.setItem('authToken', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            return { success: true, message: 'Conta criada e login realizado com sucesso!' };
+        } else {
+            return { success: false, message: data.error || 'Erro ao criar conta. Tente novamente.' };
+        }
     } catch (error) {
         console.error('Registration error:', error);
         return { success: false, message: 'Erro ao criar conta. Tente novamente.' };
@@ -296,19 +287,82 @@ function setButtonLoading(button, loading) {
 
 // Social login handlers
 function handleGoogleLogin() {
-    showToast('Redirecionando para o Google...', 'success');
-    // Here you would integrate with Google OAuth
+    // Verificar se o Google Identity Services está disponível
+    if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+        // Solicitar login com Google
+        google.accounts.id.prompt((notification) => {
+            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                // Fallback: usar login demo
+                console.log('Google One Tap não disponível, usando demo');
+                handleGoogleLoginDemo();
+            }
+        });
+    } else {
+        // Fallback: usar login demo
+        console.log('Google Identity Services não carregado, usando demo');
+        handleGoogleLoginDemo();
+    }
+}
+
+// Demo do login com Google (para testes sem configuração)
+function handleGoogleLoginDemo() {
+    showToast('🔐 Login Demo com Google (para testes)', 'success');
+    
     setTimeout(() => {
-        showToast('Login com Google não implementado ainda', 'error');
-    }, 1500);
+        // Simular dados do usuário Google
+        const googleUser = {
+            id: 'google_demo_' + Date.now(),
+            name: 'Usuário Google Demo',
+            email: 'usuario.demo@gmail.com',
+            picture: 'https://ui-avatars.com/api/?name=Usuario+Google&background=4285f4&color=fff&size=200',
+            provider: 'google',
+            email_verified: true
+        };
+        
+        // Salvar no localStorage
+        localStorage.setItem('authToken', 'demo_google_token_' + Date.now());
+        localStorage.setItem('user', JSON.stringify(googleUser));
+        
+        showToast('✅ Login realizado com sucesso!', 'success');
+        
+        // Atualizar ícone do usuário
+        updateUserIcon();
+        
+        // Redirecionar
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 1500);
+    }, 1000);
 }
 
 function handleFacebookLogin() {
-    showToast('Redirecionando para o Facebook...', 'success');
-    // Here you would integrate with Facebook OAuth
+    showToast('🔐 Login Demo com Facebook (para testes)', 'success');
+    
     setTimeout(() => {
-        showToast('Login com Facebook não implementado ainda', 'error');
-    }, 1500);
+        // Simular dados do usuário Facebook
+        const facebookUser = {
+            id: 'facebook_demo_' + Date.now(),
+            name: 'Usuário Facebook Demo',
+            email: 'usuario.demo@facebook.com',
+            picture: 'https://ui-avatars.com/api/?name=Usuario+Facebook&background=1877f2&color=fff&size=200',
+            provider: 'facebook',
+            email_verified: true
+        };
+        
+        // Salvar no localStorage
+        localStorage.setItem('authToken', 'demo_facebook_token_' + Date.now());
+        localStorage.setItem('user', JSON.stringify(facebookUser));
+        
+        showToast('✅ Login realizado com sucesso!', 'success');
+        
+        // Atualizar ícone do usuário
+        updateUserIcon();
+        
+        // Redirecionar
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 1500);
+    }, 1000);
 }
 
 // Update user icon based on login status
