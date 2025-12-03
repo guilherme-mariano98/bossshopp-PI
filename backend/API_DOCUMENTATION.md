@@ -433,3 +433,117 @@ console.log('Tamanhos disponíveis:', tamanhos);
 
 **Última Atualização:** 2025-12-03  
 **Versão da API:** 2.0
+
+
+## 🔑 Recuperação de Senha
+
+### Solicitar Recuperação de Senha
+```http
+POST /api/password-reset/
+Content-Type: application/json
+
+{
+  "email": "usuario@email.com"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Se o email existir, você receberá instruções para redefinir sua senha.",
+  "reset_link": "http://localhost:8000/reset-password.html?token=abc123..."
+}
+```
+
+**Notas:**
+- Por segurança, sempre retorna sucesso mesmo se o email não existir
+- O link expira em 1 hora
+- Em desenvolvimento, o link é retornado na resposta e impresso no console
+- Em produção, o link é enviado por email
+
+### Confirmar Redefinição de Senha
+```http
+POST /api/password-reset-confirm/
+Content-Type: application/json
+
+{
+  "token": "abc123...",
+  "password": "NovaSenha123"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Senha redefinida com sucesso!"
+}
+```
+
+**Erros possíveis:**
+- `400`: Token inválido ou expirado
+- `400`: Senha não atende aos requisitos (mínimo 8 caracteres)
+
+### Alterar Senha (Usuário Autenticado)
+```http
+POST /api/change-password/
+Authorization: Token abc123...
+Content-Type: application/json
+
+{
+  "current_password": "SenhaAtual123",
+  "new_password": "NovaSenha123"
+}
+```
+
+**Response:**
+```json
+{
+  "message": "Senha alterada com sucesso!"
+}
+```
+
+**Erros possíveis:**
+- `400`: Senha atual incorreta
+- `400`: Nova senha não atende aos requisitos
+
+## 🔐 Requisitos de Senha
+
+Para todas as operações de senha, os seguintes requisitos devem ser atendidos:
+
+- ✅ Mínimo de 8 caracteres
+- ✅ Pelo menos uma letra maiúscula
+- ✅ Pelo menos uma letra minúscula
+- ✅ Pelo menos um número
+
+## 📧 Fluxo de Recuperação de Senha
+
+1. **Usuário solicita recuperação:**
+   - Acessa `forgot-password.html`
+   - Informa o email cadastrado
+   - Sistema envia link de recuperação
+
+2. **Usuário recebe email:**
+   - Email contém link único com token
+   - Link válido por 1 hora
+
+3. **Usuário redefine senha:**
+   - Clica no link do email
+   - É redirecionado para `reset-password.html?token=...`
+   - Cria nova senha
+   - Sistema valida e atualiza
+
+4. **Usuário faz login:**
+   - Usa nova senha para acessar a conta
+
+## 🛡️ Segurança
+
+- Tokens são únicos e expiram em 1 hora
+- Senhas são criptografadas com hash seguro
+- Sistema não revela se email existe ou não
+- Tokens usados são invalidados automaticamente
+- Validação de requisitos de senha no frontend e backend
+
+---
+
+**Última Atualização:** 03/12/2025  
+**Versão da API:** 2.1

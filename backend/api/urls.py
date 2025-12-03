@@ -7,6 +7,11 @@ urlpatterns = [
     path('login/', views.login, name='login'),
     path('profile/', views.UserProfileView.as_view(), name='user-profile'),
     
+    # Recuperação de Senha
+    path('password-reset/', views.password_reset_request, name='password-reset'),
+    path('password-reset-confirm/', views.password_reset_confirm, name='password-reset-confirm'),
+    path('change-password/', views.change_password, name='change-password'),
+    
     # Categorias
     path('categories/', views.CategoryListView.as_view(), name='category-list'),
     

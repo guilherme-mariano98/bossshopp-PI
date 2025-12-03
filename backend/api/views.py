@@ -288,3 +288,164 @@ def search_products(request):
     
     serializer = ProductSerializer(queryset, many=True)
     return Response(serializer.data)
+
+
+# ============================================
+# PASSWORD RESET
+# ============================================
+
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils.crypto import get_random_string
+from django.utils import timezone
+from datetime import timedelta
+
+# Armazenamento temporário de tokens (em produção, use Redis ou banco de dados)
+password_reset_tokens = {}
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def password_reset_request(request):
+    """Solicita recuperação de senha"""
+    email = request.data.get('email')
+    
+    if not email:
+        return Response({
+            'error': 'Email é obrigatório'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        # Por segurança, não revelar se o email existe
+        return Response({
+            'message': 'Se o email existir, você receberá instruções para redefinir sua senha.'
+        }, status=status.HTTP_200_OK)
+    
+    # Gerar token único
+    token = get_random_string(64)
+    expiry = timezone.now() + timedelta(hours=1)
+    
+    # Armazenar token (em produção, use banco de dados ou Redis)
+    password_reset_tokens[token] = {
+        'user_id': user.id,
+        'expiry': expiry
+    }
+    
+    # Criar link de recuperação
+    reset_link = f"http://localhost:8000/reset-password.html?token={token}"
+    
+    # Enviar email (em desenvolvimento, apenas log)
+    try:
+        # Em produção, configure SMTP no settings.py
+        print(f"\n{'='*60}")
+        print(f"EMAIL DE RECUPERAÇÃO DE SENHA")
+        print(f"{'='*60}")
+        print(f"Para: {email}")
+        print(f"Assunto: Recuperação de Senha - BOSS SHOPP")
+        print(f"\nOlá {user.first_name},")
+        print(f"\nVocê solicitou a recuperação de senha.")
+        print(f"Clique no link abaixo para criar uma nova senha:")
+        print(f"\n{reset_link}")
+        print(f"\nEste link expira em 1 hora.")
+        print(f"{'='*60}\n")
+        
+        # Descomentar em produção com SMTP configurado:
+        # send_mail(
+        #     'Recuperação de Senha - BOSS SHOPP',
+        #     f'Olá {user.first_name},\n\nClique no link para redefinir sua senha:\n{reset_link}\n\nEste link expira em 1 hora.',
+        #     settings.DEFAULT_FROM_EMAIL,
+        #     [email],
+        #     fail_silently=False,
+        # )
+    except Exception as e:
+        print(f"Erro ao enviar email: {e}")
+    
+    return Response({
+        'message': 'Se o email existir, você receberá instruções para redefinir sua senha.',
+        'reset_link': reset_link  # Apenas para desenvolvimento
+    }, status=status.HTTP_200_OK)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def password_reset_confirm(request):
+    """Confirma e redefine a senha"""
+    token = request.data.get('token')
+    new_password = request.data.get('password')
+    
+    if not token or not new_password:
+        return Response({
+            'error': 'Token e senha são obrigatórios'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Verificar token
+    token_data = password_reset_tokens.get(token)
+    
+    if not token_data:
+        return Response({
+            'error': 'Token inválido ou expirado'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Verificar expiração
+    if timezone.now() > token_data['expiry']:
+        del password_reset_tokens[token]
+        return Response({
+            'error': 'Token expirado. Solicite um novo link de recuperação.'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Validar senha
+    if len(new_password) < 8:
+        return Response({
+            'error': 'A senha deve ter no mínimo 8 caracteres'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Atualizar senha
+    try:
+        user = User.objects.get(id=token_data['user_id'])
+        user.set_password(new_password)
+        user.save()
+        
+        # Remover token usado
+        del password_reset_tokens[token]
+        
+        return Response({
+            'message': 'Senha redefinida com sucesso!'
+        }, status=status.HTTP_200_OK)
+    except User.DoesNotExist:
+        return Response({
+            'error': 'Usuário não encontrado'
+        }, status=status.HTTP_404_NOT_FOUND)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def change_password(request):
+    """Alterar senha (usuário autenticado)"""
+    current_password = request.data.get('current_password')
+    new_password = request.data.get('new_password')
+    
+    if not current_password or not new_password:
+        return Response({
+            'error': 'Senha atual e nova senha são obrigatórias'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    user = request.user
+    
+    # Verificar senha atual
+    if not user.check_password(current_password):
+        return Response({
+            'error': 'Senha atual incorreta'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Validar nova senha
+    if len(new_password) < 8:
+        return Response({
+            'error': 'A nova senha deve ter no mínimo 8 caracteres'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Atualizar senha
+    user.set_password(new_password)
+    user.save()
+    
+    return Response({
+        'message': 'Senha alterada com sucesso!'
+    }, status=status.HTTP_200_OK)
