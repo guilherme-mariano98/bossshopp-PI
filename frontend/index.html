@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="optimized-styles.css">
     <link rel="stylesheet" href="panel-buttons.css">
     <link rel="stylesheet" href="pages.css">
+    <link rel="stylesheet" href="enhanced-styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 </head>
@@ -19,25 +20,7 @@
         </div>
     </div>
 
-    <!-- Header -->
-    <header class="header">
-        <div class="container">
-            <div class="header-top">
-                <div class="header-links">
-                    <a href="sobre.html" class="header-link">Sobre</a>
-                    <a href="atendimento.html" class="header-link">Atendimento</a>
-                    <a href="#" class="header-link">Vendedor</a>
-                    <a href="#" class="header-link">Download</a>
-                    <a href="#" class="header-link">Conecte-se</a>
-                </div>
-                <div class="header-social">
-                    <a href="#" class="social-link"><i class="fab fa-facebook"></i></a>
-                    <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
-                    <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
-                </div>
-            </div>
-        </div>
-    </header>
+    <!-- Header removido -->
 
     <!-- Navigation -->
     <nav class="navbar">
@@ -271,7 +254,7 @@
                 </a>
             </div>
             <div class="categories-cta">
-                <a href="#" class="view-all-categories">
+                <a href="categorias.html" class="view-all-categories">
                     Ver todas as categorias
                     <i class="fas fa-arrow-right"></i>
                 </a>
@@ -308,16 +291,167 @@
                 </div>
             </div>
             
-            <div class="products-grid">
-                <!-- Produtos serão carregados dinamicamente do banco de dados -->
-                <div class="empty-products-message" style="text-align: center; padding: 60px 20px; grid-column: 1 / -1;">
-                    <i class="fas fa-box-open" style="font-size: 64px; color: #ccc; margin-bottom: 20px;"></i>
-                    <h3 style="color: #666; margin-bottom: 10px;">Nenhum produto em oferta no momento</h3>
-                    <p style="color: #999; margin-bottom: 20px;">Adicione produtos pelo painel administrativo</p>
-                    <a href="admin-panel.html" class="add-products-btn" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; border-radius: 25px; text-decoration: none; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
-                        <i class="fas fa-plus-circle" style="margin-right: 8px;"></i>
-                        Adicionar Produtos
-                    </a>
+            <div class="products-grid flash-products">
+                <!-- Produto 1: iPhone -->
+                <div class="product-card flash-product">
+                    <div class="product-badge flash-badge">-35%</div>
+                    <div class="product-image">
+                        <i class="fas fa-mobile-alt" style="font-size: 4rem; color: #ff6b35;"></i>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Eletrônicos</div>
+                        <h3>iPhone 15 Pro Max</h3>
+                        <div class="product-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <span>(1.234)</span>
+                        </div>
+                        <div class="product-price">
+                            <span class="old-price">R$ 8.999,00</span>
+                            <span class="new-price">R$ 5.849,00</span>
+                        </div>
+                        <button class="add-to-cart-btn flash-btn" onclick="addToCart('iPhone 15 Pro Max', 5849.00)">
+                            <i class="fas fa-shopping-cart"></i> Comprar Agora
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Produto 2: Tênis Nike -->
+                <div class="product-card flash-product">
+                    <div class="product-badge flash-badge">-40%</div>
+                    <div class="product-image">
+                        <i class="fas fa-shoe-prints" style="font-size: 4rem; color: #ff6b35;"></i>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Esportes</div>
+                        <h3>Tênis Nike Air Max</h3>
+                        <div class="product-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                            <span>(856)</span>
+                        </div>
+                        <div class="product-price">
+                            <span class="old-price">R$ 799,90</span>
+                            <span class="new-price">R$ 479,90</span>
+                        </div>
+                        <button class="add-to-cart-btn flash-btn" onclick="addToCart('Tênis Nike Air Max', 479.90)">
+                            <i class="fas fa-shopping-cart"></i> Comprar Agora
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Produto 3: Notebook -->
+                <div class="product-card flash-product">
+                    <div class="product-badge flash-badge">-30%</div>
+                    <div class="product-image">
+                        <i class="fas fa-laptop" style="font-size: 4rem; color: #ff6b35;"></i>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Eletrônicos</div>
+                        <h3>Notebook Dell Inspiron</h3>
+                        <div class="product-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <span>(567)</span>
+                        </div>
+                        <div class="product-price">
+                            <span class="old-price">R$ 4.299,00</span>
+                            <span class="new-price">R$ 3.009,00</span>
+                        </div>
+                        <button class="add-to-cart-btn flash-btn" onclick="addToCart('Notebook Dell Inspiron', 3009.00)">
+                            <i class="fas fa-shopping-cart"></i> Comprar Agora
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Produto 4: Smart TV -->
+                <div class="product-card flash-product">
+                    <div class="product-badge flash-badge">-45%</div>
+                    <div class="product-image">
+                        <i class="fas fa-tv" style="font-size: 4rem; color: #ff6b35;"></i>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Eletrônicos</div>
+                        <h3>Smart TV 65" 4K</h3>
+                        <div class="product-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                            <span>(423)</span>
+                        </div>
+                        <div class="product-price">
+                            <span class="old-price">R$ 3.999,00</span>
+                            <span class="new-price">R$ 2.199,00</span>
+                        </div>
+                        <button class="add-to-cart-btn flash-btn" onclick="addToCart('Smart TV 65&quot; 4K', 2199.00)">
+                            <i class="fas fa-shopping-cart"></i> Comprar Agora
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Produto 5: AirPods -->
+                <div class="product-card flash-product">
+                    <div class="product-badge flash-badge">-38%</div>
+                    <div class="product-image">
+                        <i class="fas fa-headphones" style="font-size: 4rem; color: #ff6b35;"></i>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Áudio</div>
+                        <h3>AirPods Pro 2</h3>
+                        <div class="product-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <span>(2.145)</span>
+                        </div>
+                        <div class="product-price">
+                            <span class="old-price">R$ 2.399,00</span>
+                            <span class="new-price">R$ 1.487,00</span>
+                        </div>
+                        <button class="add-to-cart-btn flash-btn" onclick="addToCart('AirPods Pro 2', 1487.00)">
+                            <i class="fas fa-shopping-cart"></i> Comprar Agora
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Produto 6: Smartwatch -->
+                <div class="product-card flash-product">
+                    <div class="product-badge flash-badge">-42%</div>
+                    <div class="product-image">
+                        <i class="fas fa-clock" style="font-size: 4rem; color: #ff6b35;"></i>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">Wearables</div>
+                        <h3>Apple Watch Series 9</h3>
+                        <div class="product-rating">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <span>(1.678)</span>
+                        </div>
+                        <div class="product-price">
+                            <span class="old-price">R$ 4.299,00</span>
+                            <span class="new-price">R$ 2.493,00</span>
+                        </div>
+                        <button class="add-to-cart-btn flash-btn" onclick="addToCart('Apple Watch Series 9', 2493.00)">
+                            <i class="fas fa-shopping-cart"></i> Comprar Agora
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -328,47 +462,71 @@
         <div class="container">
             <h3 class="section-title">Destaques Especiais</h3>
             <div class="highlight-grid">
-                <div class="highlight-card">
+                <div class="highlight-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="highlight-badge">Econômico</div>
                     <div class="highlight-image">
                         <i class="fas fa-truck highlight-icon"></i>
                     </div>
                     <h4>Frete Grátis</h4>
                     <p>Para compras acima de R$ 200</p>
+                    <div class="highlight-footer">
+                        <span class="highlight-stat">🚚 Entrega rápida</span>
+                    </div>
                 </div>
-                <div class="highlight-card">
+                <div class="highlight-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="highlight-badge">Seguro</div>
                     <div class="highlight-image">
                         <i class="fas fa-shield-alt highlight-icon"></i>
                     </div>
                     <h4>Compra Segura</h4>
                     <p>Seu dinheiro garantido</p>
+                    <div class="highlight-footer">
+                        <span class="highlight-stat">🔒 100% Protegido</span>
+                    </div>
                 </div>
-                <div class="highlight-card">
+                <div class="highlight-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="highlight-badge">Flexível</div>
                     <div class="highlight-image">
                         <i class="fas fa-sync-alt highlight-icon"></i>
                     </div>
                     <h4>Devolução Fácil</h4>
                     <p>Até 30 dias para troca</p>
+                    <div class="highlight-footer">
+                        <span class="highlight-stat">↩️ Sem burocracia</span>
+                    </div>
                 </div>
-                <div class="highlight-card">
+                <div class="highlight-card" data-aos="fade-up" data-aos-delay="400">
+                    <div class="highlight-badge">Sempre Online</div>
                     <div class="highlight-image">
                         <i class="fas fa-headset highlight-icon"></i>
                     </div>
                     <h4>Suporte 24/7</h4>
                     <p>Atendimento especializado</p>
+                    <div class="highlight-footer">
+                        <span class="highlight-stat">💬 Chat ao vivo</span>
+                    </div>
                 </div>
-                <div class="highlight-card premium-pack">
+                <div class="highlight-card premium-pack" data-aos="zoom-in" data-aos-delay="500">
+                    <div class="highlight-badge premium">⭐ Premium</div>
                     <div class="highlight-image">
                         <i class="fas fa-gift highlight-icon"></i>
                     </div>
                     <h4>Embalagem Premium</h4>
                     <p>Para presentear com carinho</p>
+                    <div class="highlight-footer">
+                        <span class="highlight-stat">🎁 Exclusivo</span>
+                    </div>
                 </div>
-                <div class="highlight-card">
+                <div class="highlight-card" data-aos="fade-up" data-aos-delay="600">
+                    <div class="highlight-badge">Facilitado</div>
                     <div class="highlight-image">
                         <i class="fas fa-credit-card highlight-icon"></i>
                     </div>
                     <h4>Até 12x Sem Juros</h4>
                     <p>Parcelamento sem preocupações</p>
+                    <div class="highlight-footer">
+                        <span class="highlight-stat">💳 Todas as bandeiras</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -384,21 +542,16 @@
             
             <div class="products-grid">
                 <!-- Produtos serão carregados dinamicamente do banco de dados -->
-                <div class="empty-products-message" style="text-align: center; padding: 60px 20px; grid-column: 1 / -1;">
-                    <i class="fas fa-box-open" style="font-size: 64px; color: #ccc; margin-bottom: 20px;"></i>
-                    <h3 style="color: #666; margin-bottom: 10px;">Nenhum produto popular no momento</h3>
-                    <p style="color: #999; margin-bottom: 20px;">Adicione produtos pelo painel administrativo</p>
-                    <a href="admin-panel.html" class="add-products-btn" style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; border-radius: 25px; text-decoration: none; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
-                        <i class="fas fa-plus-circle" style="margin-right: 8px;"></i>
-                        Adicionar Produtos
-                    </a>
+                <div class="loading-placeholder" style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                    <div class="spinner"></div>
+                    <p>Carregando produtos populares...</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Category Tabs -->
-    <section class="category-tabs">
+    <!-- Newsletter -->
+    <section class="newsletter">
         <div class="container">
             <div class="tabs-header">
                 <h2>Categorias em Destaque</h2>
@@ -1088,11 +1241,7 @@
                 </div>
             </div>
         </div>
-    </section>
-
-    <!-- Newsletter -->
-    <section class="newsletter">
-        <div class="container">
+    <div class="container">
             <div class="newsletter-content">
                 <h3>Fique por dentro das novidades</h3>
                 <p>Assine nossa newsletter e receba ofertas exclusivas e novidades em primeira mão</p>
@@ -1527,5 +1676,6 @@
         });
     </script>
     <script src="panel-access.js"></script>
+    <!-- <script src="enhanced-products.js"></script> -->
 </body>
 </html>

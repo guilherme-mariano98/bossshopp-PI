@@ -1361,8 +1361,9 @@ body {
     transform: translateY(0);
 }
 
-/* Newsletter */
+/* Newsletter - OCULTA */
 .newsletter {
+    display: none !important;
     background: linear-gradient(135deg, #000000 0%, #333333 100%);
     color: #ffffff;
     padding: 80px 0;
@@ -1578,8 +1579,9 @@ body {
     color: #ffffff;
 }
 
-/* Top Sellers */
+/* Top Sellers - OCULTA */
 .top-sellers {
+    display: none !important;
     padding: 70px 0;
     background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
 }
@@ -4741,8 +4743,9 @@ select {
     }
 }
 
-/* Category Tabs */
+/* Category Tabs - OCULTA */
 .category-tabs {
+    display: none !important;
     padding: 60px 0 40px;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
     position: relative;
@@ -6376,8 +6379,9 @@ select {
     font-size: 20px;
 }
 
-/* Category Tabs */
+/* Category Tabs - OCULTA */
 .category-tabs {
+    display: none !important;
     padding: 40px 0 20px;
     background-color: #ffffff;
 }

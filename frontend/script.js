@@ -12,6 +12,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Função para adicionar produto ao carrinho
 function addToCart(productName, price) {
+    // Verificar se o usuário está logado
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const userName = localStorage.getItem('userName');
+    
+    if (!isLoggedIn) {
+        // Mostrar modal de login
+        showLoginModal();
+        showNotification('Você precisa estar logado para adicionar produtos ao carrinho!', 'warning');
+        return;
+    }
+    
     const existingItem = cart.find(item => item.name === productName);
     
     if (existingItem) {
@@ -28,7 +39,85 @@ function addToCart(productName, price) {
     localStorage.setItem('cart', JSON.stringify(cart));
     
     updateCartCount();
-    showNotification(`${productName} adicionado ao carrinho!`);
+    showNotification(`${productName} adicionado ao carrinho!`, 'success');
+}
+
+// Função para mostrar modal de login
+function showLoginModal() {
+    // Criar overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        animation: fadeIn 0.3s ease;
+    `;
+    
+    // Criar modal
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: slideUp 0.3s ease;
+        text-align: center;
+    `;
+    
+    modal.innerHTML = `
+        <div style="font-size: 3rem; color: #ff6b35; margin-bottom: 20px;">
+            <i class="fas fa-user-lock"></i>
+        </div>
+        <h2 style="color: #333; margin-bottom: 15px; font-size: 1.8rem;">Login Necessário</h2>
+        <p style="color: #666; margin-bottom: 30px; font-size: 1.1rem;">
+            Você precisa estar logado para adicionar produtos ao carrinho.
+        </p>
+        <div style="display: flex; gap: 15px; justify-content: center;">
+            <a href="login.html" style="
+                background: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+                color: white;
+                padding: 12px 30px;
+                border-radius: 25px;
+                text-decoration: none;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                display: inline-block;
+            ">
+                Fazer Login
+            </a>
+            <button onclick="this.closest('div').parentElement.parentElement.remove()" style="
+                background: #f0f0f0;
+                color: #333;
+                padding: 12px 30px;
+                border-radius: 25px;
+                border: none;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            ">
+                Fechar
+            </button>
+        </div>
+    `;
+    
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+    
+    // Fechar ao clicar no overlay
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.remove();
+        }
+    });
 }
 
 // Atualizar contador do carrinho
@@ -39,14 +128,24 @@ function updateCartCount() {
 }
 
 // Mostrar notificação
-function showNotification(message) {
+function showNotification(message, type = 'success') {
+    // Definir cores baseadas no tipo
+    const colors = {
+        success: '#4CAF50',
+        warning: '#ff6b35',
+        error: '#f44336',
+        info: '#2196F3'
+    };
+    
+    const bgColor = colors[type] || colors.success;
+    
     // Criar elemento de notificação
     const notification = document.createElement('div');
     notification.style.cssText = `
         position: fixed;
         top: 20px;
         right: 20px;
-        background-color: #000000;
+        background-color: ${bgColor};
         color: #ffffff;
         padding: 15px 20px;
         border-radius: 5px;

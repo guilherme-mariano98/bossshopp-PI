@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: bossshopp
+    runtime: python
+    plan: free
+    buildCommand: "cd backend && chmod +x build.sh && ./build.sh"
+    startCommand: "cd backend && gunicorn boss_shopp.wsgi:application --bind 0.0.0.0:$PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DEBUG
+        value: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bossshopp-db
+          property: connectionString
+
+databases:
+  - name: bossshopp-db
+    databaseName: bossshopp
+    user: bossshopp
+    plan: free
